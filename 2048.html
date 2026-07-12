@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048 — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .board2048{
+    display:grid;
+    grid-template-columns: repeat(4, 74px);
+    grid-template-rows: repeat(4, 74px);
+    gap: 10px;
+    background: var(--surface);
+    padding: 10px;
+    border-radius: 14px;
+    border: 2px solid var(--line);
+    position: relative;
+    touch-action: none;
+  }
+  .tile{
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight:700; font-size:1.4rem;
+    background: var(--surface-2); color: var(--text-dim);
+    transition: background .15s ease, color .15s ease, transform .1s ease;
+  }
+  .overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction: column; gap:14px;
+    background: rgba(22,17,44,0.9); border-radius:14px; text-align:center; padding:20px;
+  }
+  .stage-box{ position:relative; }
+  .hidden{ display:none; }
+  @media (max-width: 380px){
+    .board2048{ grid-template-columns: repeat(4, 64px); grid-template-rows: repeat(4, 64px); gap:8px; }
+    .tile{ font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">🔢 2048</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="score-row">
+      <span class="score-pill">Điểm: <strong id="score">0</strong></span>
+      <span class="score-pill">Kỷ lục: <strong id="best">0</strong></span>
+      <button class="btn btn-ghost" id="restartBtn" style="padding:8px 16px; font-size:0.85rem;">↻ Chơi lại</button>
+    </div>
+
+    <div class="stage-box">
+      <div class="board2048" id="board"></div>
+      <div class="overlay hidden" id="overlay"></div>
+    </div>
+
+    <p class="game-hint">Dùng phím mũi tên (hoặc vuốt trên di động) để gộp các ô số giống nhau. Đạt 2048 để chiến thắng!</p>
+  </div>
+</div>
+
+<script>
+const size = 4;
+let grid, score, best;
+best = Number(sessionStorage.getItem('heino_2048_best') || 0);
+document.getElementById('best').textContent = best;
+
+const boardEl = document.getElementById('board');
+const overlay = document.getElementById('overlay');
+
+function emptyGrid(){
+  return Array.from({length:size}, () => Array(size).fill(0));
+}
+
+function addRandomTile(){
+  const empties = [];
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(grid[r][c]===0) empties.push([r,c]);
+  if(empties.length===0) return;
+  const [r,c] = empties[Math.floor(Math.random()*empties.length)];
+  grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+}
+
+function colorFor(v){
+  const map = {
+    2:'#3A3070', 4:'#4A3D8F', 8:'#FF5D73', 16:'#FF7A5C',
+    32:'#FF9E43', 64:'#FFC23F', 128:'#3FE0B0', 256:'#2FC79A',
+    512:'#63A9FF', 1024:'#FFD23F', 2048:'#FFD23F'
+  };
+  return map[v] || '#FFD23F';
+}
+
+function render(){
+  boardEl.innerHTML = '';
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const v = grid[r][c];
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      if(v){
+        tile.textContent = v;
+        tile.style.background = colorFor(v);
+        tile.style.color = v <= 4 ? 'var(--text)' : '#191333';
+      }
+      boardEl.appendChild(tile);
+    }
+  }
+  document.getElementById('score').textContent = score;
+}
+
+function slideRowLeft(row){
+  let arr = row.filter(v => v !== 0);
+  for(let i=0;i<arr.length-1;i++){
+    if(arr[i] === arr[i+1]){
+      arr[i] *= 2;
+      score += arr[i];
+      arr[i+1] = 0;
+    }
+  }
+  arr = arr.filter(v => v !== 0);
+  while(arr.length < size) arr.push(0);
+  return arr;
+}
+
+function rotate(g){
+  const ng = emptyGrid();
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++) ng[c][size-1-r] = g[r][c];
+  return ng;
+}
+
+function move(dir){
+  let moved = false;
+  let g = grid.map(row => row.slice());
+
+  let rotations = 0;
+  if(dir === 'up') rotations = 3;
+  else if(dir === 'right') rotations = 2;
+  else if(dir === 'down') rotations = 1;
+
+  for(let i=0;i<rotations;i++) g = rotate(g);
+
+  const newG = g.map(row => slideRowLeft(row));
+
+  let backRotations = (4 - rotations) % 4;
+  for(let i=0;i<backRotations;i++) newG.splice(0, newG.length, ...rotate(newG));
+
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(newG[r][c] !== grid[r][c]) moved = true;
+
+  if(moved){
+    grid = newG;
+    addRandomTile();
+    render();
+    checkEnd();
+  }
+}
+
+function checkEnd(){
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(grid[r][c] === 2048){
+    showOverlay('🎉 Bạn thắng!', `Bạn đã đạt 2048 với ${score} điểm.`, true);
+    return;
+  }
+  const empties = grid.flat().filter(v => v===0).length;
+  if(empties > 0) return;
+  for(let r=0;r<size;r++) for(let c=0;c<size-1;c++) if(grid[r][c] === grid[r][c+1]) return;
+  for(let c=0;c<size;c++) for(let r=0;r<size-1;r++) if(grid[r][c] === grid[r+1][c]) return;
+
+  if(score > best){ best = score; sessionStorage.setItem('heino_2048_best', best); document.getElementById('best').textContent = best; }
+  showOverlay('Hết nước đi 😵', `Điểm cuối cùng: ${score}.`, false);
+}
+
+function showOverlay(title, msg, win){
+  overlay.classList.remove('hidden');
+  overlay.innerHTML = `
+    <h3 style="font-family:var(--font-display); margin:0; font-size:1.4rem;">${title}</h3>
+    <p class="game-hint">${msg}</p>
+    <button class="btn btn-primary" id="ovRestart">↻ Chơi lại</button>
+  `;
+  document.getElementById('ovRestart').addEventListener('click', startGame);
+  if(score > best){ best = score; sessionStorage.setItem('heino_2048_best', best); document.getElementById('best').textContent = best; }
+}
+
+function startGame(){
+  overlay.classList.add('hidden');
+  grid = emptyGrid();
+  score = 0;
+  addRandomTile();
+  addRandomTile();
+  render();
+}
+
+window.addEventListener('keydown', e => {
+  const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+  if(map[e.key]){ e.preventDefault(); move(map[e.key]); }
+});
+
+let touchStartX=0, touchStartY=0;
+boardEl.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive:true});
+boardEl.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if(Math.abs(dx) > Math.abs(dy)){
+    move(dx > 30 ? 'right' : dx < -30 ? 'left' : '');
+  } else {
+    move(dy > 30 ? 'down' : dy < -30 ? 'up' : '');
+  }
+}, {passive:true});
+
+document.getElementById('restartBtn').addEventListener('click', startGame);
+
+startGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lật Thẻ Ghi Nhớ — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .board-mem{
+    display:grid; grid-template-columns: repeat(4, 78px); gap: 10px;
+    background: var(--surface); padding: 12px; border-radius: 14px; border: 2px solid var(--line);
+  }
+  .card{
+    width:78px; height:78px; border-radius: 10px; cursor:pointer;
+    background: var(--surface-2); border: none;
+    display:flex; align-items:center; justify-content:center; font-size: 2.1rem;
+    perspective: 600px;
+  }
+  .card .inner{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    transition: transform .35s ease; transform-style: preserve-3d; position:relative;
+  }
+  .card.flipped .inner, .card.matched .inner{ transform: rotateY(180deg); }
+  .face{
+    position:absolute; inset:0; backface-visibility: hidden;
+    display:flex; align-items:center; justify-content:center; border-radius: 10px;
+  }
+  .face.back{ background: var(--surface-2); color: var(--text-dim); font-size:1.4rem; }
+  .face.front{ background: var(--surface-2); transform: rotateY(180deg); }
+  .card.matched .face.front{ background: rgba(63,224,176,0.25); }
+  @media (max-width: 420px){
+    .board-mem{ grid-template-columns: repeat(4, 62px); }
+    .card{ width:62px; height:62px; font-size:1.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">🃏 Lật Thẻ Ghi Nhớ</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="score-row">
+      <span class="score-pill">Lượt lật: <strong id="moves">0</strong></span>
+      <span class="score-pill">Thời gian: <strong id="time">0s</strong></span>
+      <span class="score-pill">Kỷ lục: <strong id="best">—</strong></span>
+    </div>
+
+    <div class="board-mem" id="board"></div>
+    <button class="btn btn-primary" id="restartBtn">↻ Ván mới</button>
+    <p class="game-hint" id="hint">Lật 2 thẻ mỗi lượt. Tìm đủ 8 cặp giống nhau để hoàn thành.</p>
+  </div>
+</div>
+
+<script>
+const icons = ['🍎','🐸','🚀','🎈','🍩','🐙','🎵','⭐'];
+const boardEl = document.getElementById('board');
+let deck, flipped, matchedCount, moves, timer, seconds, started;
+
+let best = sessionStorage.getItem('heino_memory_best');
+document.getElementById('best').textContent = best ? best + ' lượt' : '—';
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function newGame(){
+  clearInterval(timer);
+  seconds = 0; started = false;
+  document.getElementById('time').textContent = '0s';
+  deck = shuffle([...icons, ...icons]);
+  flipped = [];
+  matchedCount = 0;
+  moves = 0;
+  document.getElementById('moves').textContent = moves;
+  document.getElementById('hint').textContent = 'Lật 2 thẻ mỗi lượt. Tìm đủ 8 cặp giống nhau để hoàn thành.';
+
+  boardEl.innerHTML = '';
+  deck.forEach((icon, i) => {
+    const card = document.createElement('button');
+    card.className = 'card';
+    card.dataset.i = i;
+    card.dataset.icon = icon;
+    card.innerHTML = `
+      <div class="inner">
+        <div class="face back">?</div>
+        <div class="face front">${icon}</div>
+      </div>`;
+    card.addEventListener('click', () => flipCard(card));
+    boardEl.appendChild(card);
+  });
+}
+
+function startTimer(){
+  if(started) return;
+  started = true;
+  timer = setInterval(() => {
+    seconds++;
+    document.getElementById('time').textContent = seconds + 's';
+  }, 1000);
+}
+
+function flipCard(card){
+  if(card.classList.contains('flipped') || card.classList.contains('matched') || flipped.length === 2) return;
+  startTimer();
+  card.classList.add('flipped');
+  flipped.push(card);
+
+  if(flipped.length === 2){
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    const [a,b] = flipped;
+    if(a.dataset.icon === b.dataset.icon){
+      a.classList.add('matched');
+      b.classList.add('matched');
+      flipped = [];
+      matchedCount++;
+      if(matchedCount === icons.length) finishGame();
+    } else {
+      setTimeout(() => {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        flipped = [];
+      }, 700);
+    }
+  }
+}
+
+function finishGame(){
+  clearInterval(timer);
+  document.getElementById('hint').textContent = `🎉 Hoàn thành trong ${moves} lượt và ${seconds} giây!`;
+  if(!best || moves < Number(best)){
+    best = moves;
+    sessionStorage.setItem('heino_memory_best', best);
+    document.getElementById('best').textContent = best + ' lượt';
+  }
+}
+
+document.getElementById('restartBtn').addEventListener('click', newGame);
+newGame();
+</script>
+</body>
+</html>

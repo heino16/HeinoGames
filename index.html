@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heino — Chơi game miễn phí ngay trên trình duyệt</title>
+<meta name="description" content="Heino là kho game trực tuyến miễn phí: rắn săn mồi, 2048, cờ caro, lật thẻ ghi nhớ, đập chuột và nhiều hơn nữa. Không cần cài đặt, chơi ngay trên trình duyệt.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="logo"><span class="logo-mark">H</span>HEI<span>NO</span></a>
+    <div class="searchbox">
+      🔍 <input type="text" id="searchInput" placeholder="Tìm game trên Heino...">
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>Hôm nay bạn muốn chơi gì?</h1>
+    <p>8 game miễn phí, chơi thẳng trên trình duyệt — không tải app, không đăng ký.</p>
+  </div>
+
+  <div class="nav-cats" id="catChips">
+    <button class="nav-chip active" data-filter="all">Tất cả</button>
+    <button class="nav-chip" data-filter="arcade">🕹️ Arcade</button>
+    <button class="nav-chip" data-filter="tri-tue">🧠 Trí tuệ</button>
+    <button class="nav-chip" data-filter="thu-gian">🌿 Thư giãn</button>
+    <button class="nav-chip" data-filter="hai-nguoi">🤝 2 người chơi</button>
+  </div>
+
+  <div class="section-head">
+    <h2>Chơi nhiều nhất tuần này</h2>
+  </div>
+  <div class="strip-scroll" id="popularStrip">
+    <!-- filled by JS from GAMES list -->
+  </div>
+
+  <div class="section-head">
+    <h2>Thư viện game</h2>
+    <span class="see-all" id="resultCount">8 game</span>
+  </div>
+  <div class="tile-grid" id="tileGrid">
+    <!-- filled by JS from GAMES list -->
+  </div>
+
+  <div class="section-head">
+    <h2>Khám phá theo danh mục</h2>
+  </div>
+  <div class="cat-grid">
+    <a class="cat-card" href="#" data-filter="arcade" style="--cat-color:var(--brand)">
+      <div class="cat-icon">🕹️</div>
+      <strong>Arcade</strong>
+      <small>3 game</small>
+    </a>
+    <a class="cat-card" href="#" data-filter="tri-tue" style="--cat-color:var(--sky)">
+      <div class="cat-icon">🧠</div>
+      <strong>Trí tuệ</strong>
+      <small>3 game</small>
+    </a>
+    <a class="cat-card" href="#" data-filter="thu-gian" style="--cat-color:var(--mint)">
+      <div class="cat-icon">🌿</div>
+      <strong>Thư giãn</strong>
+      <small>2 game</small>
+    </a>
+    <a class="cat-card" href="#" data-filter="hai-nguoi" style="--cat-color:var(--pink)">
+      <div class="cat-icon">🤝</div>
+      <strong>2 người chơi</strong>
+      <small>2 game</small>
+    </a>
+  </div>
+
+  <div class="about-block">
+    <div>
+      <h2>Heino là gì?</h2>
+      <p>Heino là một trang chơi game nhỏ, gọn — nơi bạn bấm vào là chơi được ngay, không cần cài đặt hay đăng ký tài khoản.</p>
+      <p>Mỗi game đều chạy bằng HTML thuần, hoạt động mượt trên cả máy tính lẫn điện thoại.</p>
+      <div class="stat-row">
+        <div><strong>8</strong><span>game</span></div>
+        <div><strong>4</strong><span>danh mục</span></div>
+        <div><strong>0đ</strong><span>chi phí</span></div>
+        <div><strong>0</strong><span>lượt tải app</span></div>
+      </div>
+    </div>
+    <div>
+      <h2>Chơi cùng bạn bè</h2>
+      <p>Thích rủ bạn chơi cùng? Cờ Caro và Kéo Búa Bao đều hỗ trợ 2 người chơi trên cùng một máy — không cần mạng, không cần tài khoản, chỉ cần chia nhau bàn phím hoặc màn hình.</p>
+      <p>Muốn thử thách bản thân? Test Phản Xạ và Đập Chuột sẽ đo xem tay bạn nhanh đến đâu.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div class="footer-col">
+      <a href="index.html" class="logo" style="margin-bottom:10px;"><span class="logo-mark">H</span>HEI<span>NO</span></a>
+      <p style="color:var(--text-dim); font-size:0.88rem; max-width:260px;">Kho game trực tuyến miễn phí, chơi ngay trên trình duyệt.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Danh mục</h4>
+      <a href="#" data-filter="arcade">Arcade</a>
+      <a href="#" data-filter="tri-tue">Trí tuệ</a>
+      <a href="#" data-filter="thu-gian">Thư giãn</a>
+      <a href="#" data-filter="hai-nguoi">2 người chơi</a>
+    </div>
+    <div class="footer-col">
+      <h4>Game nổi bật</h4>
+      <a href="games/snake.html">Rắn Săn Mồi</a>
+      <a href="games/2048.html">2048</a>
+      <a href="games/tictactoe.html">Cờ Caro</a>
+      <a href="games/memory.html">Lật Thẻ Ghi Nhớ</a>
+    </div>
+    <div class="footer-col">
+      <h4>Về Heino</h4>
+      <a href="index.html">Trang chủ</a>
+      <a href="#">Liên hệ</a>
+      <a href="#">Câu hỏi thường gặp</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 Heino. Chơi vui vẻ, nhớ nghỉ giải lao.</span>
+    <span>Made for the browser 🎮</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

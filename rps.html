@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kéo Búa Bao — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .choices{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .choice-btn{
+    width: 96px; height:96px; border-radius: 18px;
+    background: var(--surface); border: 2px solid var(--line);
+    font-size: 2.4rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .choice-btn:hover{ transform: translateY(-4px); border-color: var(--pink); }
+  .battle-row{
+    display:flex; align-items:center; gap: 30px; justify-content:center;
+    font-size: 3.6rem;
+  }
+  .battle-vs{ font-family: var(--font-mono); font-size:1rem; color: var(--text-dim); }
+  .result-text{ font-family: var(--font-display); font-size: 1.4rem; min-height: 2rem; }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">✌️ Kéo Búa Bao</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="score-row">
+      <span class="score-pill">Bạn thắng: <strong id="winCount">0</strong></span>
+      <span class="score-pill">Máy thắng: <strong id="loseCount">0</strong></span>
+      <span class="score-pill">Hoà: <strong id="drawCount">0</strong></span>
+    </div>
+
+    <div class="battle-row">
+      <span id="playerPick">❔</span>
+      <span class="battle-vs">VS</span>
+      <span id="botPick">❔</span>
+    </div>
+
+    <div class="result-text" id="resultText">Chọn một trong ba để bắt đầu</div>
+
+    <div class="choices">
+      <button class="choice-btn" data-choice="rock">✊</button>
+      <button class="choice-btn" data-choice="paper">✋</button>
+      <button class="choice-btn" data-choice="scissors">✌️</button>
+    </div>
+
+    <p class="game-hint">Búa thắng Kéo, Kéo thắng Bao, Bao thắng Búa. Máy chọn ngẫu nhiên mỗi lượt.</p>
+  </div>
+</div>
+
+<script>
+const icons = { rock:'✊', paper:'✋', scissors:'✌️' };
+const beats = { rock:'scissors', paper:'rock', scissors:'paper' };
+let win=0, lose=0, draw=0;
+
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => play(btn.dataset.choice));
+});
+
+function play(playerChoice){
+  const options = Object.keys(icons);
+  const botChoice = options[Math.floor(Math.random()*options.length)];
+
+  document.getElementById('playerPick').textContent = icons[playerChoice];
+  document.getElementById('botPick').textContent = icons[botChoice];
+
+  let result;
+  if(playerChoice === botChoice){
+    result = 'draw';
+    draw++;
+  } else if(beats[playerChoice] === botChoice){
+    result = 'win';
+    win++;
+  } else {
+    result = 'lose';
+    lose++;
+  }
+
+  document.getElementById('winCount').textContent = win;
+  document.getElementById('loseCount').textContent = lose;
+  document.getElementById('drawCount').textContent = draw;
+
+  const messages = { win: '🎉 Bạn thắng ván này!', lose: '😵 Máy thắng ván này!', draw: '🤝 Hoà rồi!' };
+  document.getElementById('resultText').textContent = messages[result];
+}
+</script>
+</body>
+</html>

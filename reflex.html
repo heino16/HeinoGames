@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Phản Xạ — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .reflex-pad{
+    width: 320px; height: 320px; max-width: 80vw; max-height: 80vw;
+    border-radius: 24px;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction: column; gap:8px;
+    font-family: var(--font-display); font-size: 1.3rem; text-align:center;
+    cursor:pointer; color:#fff; padding: 20px;
+    transition: background .1s ease;
+    user-select: none;
+  }
+  .state-wait{ background: var(--sky); }
+  .state-early{ background: #E63946; }
+  .state-ready{ background: var(--mint); }
+  .state-result{ background: var(--brand); }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">⚡ Test Phản Xạ</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="score-row">
+      <span class="score-pill">Kỷ lục: <strong id="best">— ms</strong></span>
+      <span class="score-pill">Lần gần nhất: <strong id="last">— ms</strong></span>
+    </div>
+
+    <div class="reflex-pad state-wait" id="pad">Bấm để bắt đầu</div>
+    <p class="game-hint">Chờ ô chuyển sang màu xanh lá rồi bấm càng nhanh càng tốt. Bấm sớm sẽ bị tính lỗi.</p>
+  </div>
+</div>
+
+<script>
+const pad = document.getElementById('pad');
+let state = 'idle';
+let timeoutId, startTime;
+let best = Number(sessionStorage.getItem('heino_reflex_best') || 0);
+if(best) document.getElementById('best').textContent = best + ' ms';
+
+pad.addEventListener('click', () => {
+  if(state === 'idle' || state === 'result'){
+    startRound();
+  } else if(state === 'waiting'){
+    // clicked too early
+    clearTimeout(timeoutId);
+    state = 'early';
+    pad.className = 'reflex-pad state-early';
+    pad.textContent = 'Sớm quá! Bấm để thử lại';
+    state = 'result';
+  } else if(state === 'ready'){
+    const reaction = Date.now() - startTime;
+    document.getElementById('last').textContent = reaction + ' ms';
+    if(!best || reaction < best){
+      best = reaction;
+      sessionStorage.setItem('heino_reflex_best', best);
+      document.getElementById('best').textContent = best + ' ms';
+    }
+    pad.className = 'reflex-pad state-result';
+    pad.textContent = `${reaction} ms — Bấm để thử lại`;
+    state = 'result';
+  }
+});
+
+function startRound(){
+  state = 'waiting';
+  pad.className = 'reflex-pad state-wait';
+  pad.textContent = 'Chờ màu xanh lá...';
+  const delay = 1000 + Math.random()*2500;
+  timeoutId = setTimeout(() => {
+    state = 'ready';
+    startTime = Date.now();
+    pad.className = 'reflex-pad state-ready';
+    pad.textContent = 'BẤM NGAY!';
+  }, delay);
+}
+</script>
+</body>
+</html>

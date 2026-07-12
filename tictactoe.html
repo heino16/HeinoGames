@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cờ Caro — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .board3{
+    display:grid; grid-template-columns: repeat(3, 96px); grid-template-rows: repeat(3, 96px);
+    gap: 10px; background: var(--surface); padding: 10px; border-radius: 14px; border: 2px solid var(--line);
+  }
+  .cell{
+    background: var(--surface-2); border-radius: 10px; border: none; cursor:pointer;
+    font-family: var(--font-display); font-size: 2.4rem; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text); transition: background .12s ease;
+  }
+  .cell:hover:not(:disabled){ background: #362B6B; }
+  .cell.x{ color: var(--coral); }
+  .cell.o{ color: var(--mint); }
+  .cell.win{ background: rgba(255,210,63,0.25); }
+  .mode-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .mode-row button{
+    font-family: var(--font-mono); font-size:0.82rem;
+    padding: 8px 14px; border-radius: 100px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text-dim); cursor:pointer;
+  }
+  .mode-row button.active{ background: var(--coral); color:#2A0810; border-color: var(--coral); font-weight:700; }
+  @media (max-width: 360px){
+    .board3{ grid-template-columns: repeat(3, 84px); grid-template-rows: repeat(3, 84px); }
+    .cell{ font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">⭕ Cờ Caro</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="mode-row" id="modeRow">
+      <button data-mode="pvp" class="active">2 người chơi</button>
+      <button data-mode="easy">Đấu máy (Dễ)</button>
+      <button data-mode="hard">Đấu máy (Khó)</button>
+    </div>
+
+    <div class="score-row">
+      <span class="score-pill" id="turnLabel">Lượt: X</span>
+      <span class="score-pill">X thắng: <strong id="xWins">0</strong></span>
+      <span class="score-pill">O thắng: <strong id="oWins">0</strong></span>
+    </div>
+
+    <div class="board3" id="board"></div>
+    <button class="btn btn-primary" id="resetBtn">↻ Ván mới</button>
+    <p class="game-hint">Ở chế độ đấu máy, bạn luôn là X và đi trước.</p>
+  </div>
+</div>
+
+<script>
+const boardEl = document.getElementById('board');
+const turnLabel = document.getElementById('turnLabel');
+let cells, current, mode, gameOver;
+let xWins = 0, oWins = 0;
+mode = 'pvp';
+
+const lines = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+function buildBoard(){
+  boardEl.innerHTML = '';
+  for(let i=0;i<9;i++){
+    const btn = document.createElement('button');
+    btn.className = 'cell';
+    btn.dataset.i = i;
+    btn.addEventListener('click', () => handleMove(i));
+    boardEl.appendChild(btn);
+  }
+}
+
+function newGame(){
+  cells = Array(9).fill(null);
+  current = 'X';
+  gameOver = false;
+  buildBoard();
+  updateTurnLabel();
+}
+
+function updateTurnLabel(){
+  turnLabel.textContent = `Lượt: ${current}`;
+}
+
+function checkWinner(brd){
+  for(const [a,b,c] of lines){
+    if(brd[a] && brd[a] === brd[b] && brd[a] === brd[c]) return { winner: brd[a], line:[a,b,c] };
+  }
+  if(brd.every(v => v)) return { winner: 'draw' };
+  return null;
+}
+
+function handleMove(i){
+  if(gameOver || cells[i]) return;
+  cells[i] = current;
+  renderCell(i);
+  const result = checkWinner(cells);
+  if(result){ return endGame(result); }
+  current = current === 'X' ? 'O' : 'X';
+  updateTurnLabel();
+
+  if(mode !== 'pvp' && current === 'O' && !gameOver){
+    setTimeout(aiMove, 350);
+  }
+}
+
+function renderCell(i){
+  const el = boardEl.children[i];
+  el.textContent = cells[i];
+  el.classList.add(cells[i].toLowerCase());
+  el.disabled = true;
+}
+
+function endGame(result){
+  gameOver = true;
+  [...boardEl.children].forEach(c => c.disabled = true);
+  if(result.winner === 'draw'){
+    turnLabel.textContent = 'Hoà!';
+  } else {
+    result.line.forEach(i => boardEl.children[i].classList.add('win'));
+    turnLabel.textContent = `${result.winner} thắng! 🎉`;
+    if(result.winner === 'X'){ xWins++; document.getElementById('xWins').textContent = xWins; }
+    else { oWins++; document.getElementById('oWins').textContent = oWins; }
+  }
+}
+
+function aiMove(){
+  if(gameOver) return;
+  let move;
+  if(mode === 'easy'){
+    const avail = cells.map((v,i)=>v?null:i).filter(v=>v!==null);
+    move = avail[Math.floor(Math.random()*avail.length)];
+  } else {
+    move = bestMove();
+  }
+  if(move === undefined || move === null) return;
+  cells[move] = 'O';
+  renderCell(move);
+  const result = checkWinner(cells);
+  if(result){ return endGame(result); }
+  current = 'X';
+  updateTurnLabel();
+}
+
+function bestMove(){
+  let bestScore = -Infinity, move;
+  for(let i=0;i<9;i++){
+    if(!cells[i]){
+      cells[i] = 'O';
+      const score = minimax(cells, 0, false);
+      cells[i] = null;
+      if(score > bestScore){ bestScore = score; move = i; }
+    }
+  }
+  return move;
+}
+
+function minimax(brd, depth, isMax){
+  const result = checkWinner(brd);
+  if(result){
+    if(result.winner === 'O') return 10 - depth;
+    if(result.winner === 'X') return depth - 10;
+    return 0;
+  }
+  if(isMax){
+    let best = -Infinity;
+    for(let i=0;i<9;i++){
+      if(!brd[i]){
+        brd[i] = 'O';
+        best = Math.max(best, minimax(brd, depth+1, false));
+        brd[i] = null;
+      }
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for(let i=0;i<9;i++){
+      if(!brd[i]){
+        brd[i] = 'X';
+        best = Math.min(best, minimax(brd, depth+1, true));
+        brd[i] = null;
+      }
+    }
+    return best;
+  }
+}
+
+document.getElementById('modeRow').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  [...document.getElementById('modeRow').children].forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  mode = btn.dataset.mode;
+  newGame();
+});
+
+document.getElementById('resetBtn').addEventListener('click', newGame);
+
+newGame();
+</script>
+</body>
+</html>

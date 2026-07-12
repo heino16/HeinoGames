@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đập Chuột — Heino</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .grid-mole{
+    display:grid; grid-template-columns: repeat(3, 96px); gap: 14px;
+    background: var(--surface); padding: 16px; border-radius: 18px; border: 1px solid var(--line);
+  }
+  .hole{
+    width:96px; height:96px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size: 2.4rem;
+    cursor: pointer; user-select:none; overflow:hidden;
+  }
+  .hole.up{ background: #FFE9DC; }
+  .hole span{ transform: scale(0); transition: transform .12s ease; }
+  .hole.up span{ transform: scale(1); }
+  .overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction: column; gap:14px;
+    background: rgba(255,255,255,0.94); border-radius:18px; text-align:center; padding:20px;
+  }
+  .stage-box{ position:relative; }
+  @media (max-width: 360px){
+    .grid-mole{ grid-template-columns: repeat(3, 84px); gap: 10px; }
+    .hole{ width:84px; height:84px; font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="game-shell">
+  <div class="game-top">
+    <a href="../index.html" class="back-link">← Về Heino</a>
+    <span class="game-title">🔨 Đập Chuột</span>
+    <span></span>
+  </div>
+
+  <div class="game-stage">
+    <div class="score-row">
+      <span class="score-pill">Điểm: <strong id="score">0</strong></span>
+      <span class="score-pill">Thời gian: <strong id="time">30</strong>s</span>
+      <span class="score-pill">Kỷ lục: <strong id="best">0</strong></span>
+    </div>
+
+    <div class="stage-box">
+      <div class="grid-mole" id="grid"></div>
+      <div class="overlay" id="overlay">
+        <h3 style="font-family:var(--font-display); margin:0; font-size:1.4rem;">Sẵn sàng đập chuột?</h3>
+        <p class="game-hint">Bấm vào chuột 🐹 xuất hiện trong 30 giây. Càng nhanh, điểm càng cao.</p>
+        <button class="btn btn-primary" id="startBtn">▶ Bắt đầu</button>
+      </div>
+    </div>
+    <p class="game-hint">Chuột xuất hiện ngẫu nhiên ở 9 hang. Nhanh tay đập trước khi nó chui xuống!</p>
+  </div>
+</div>
+
+<script>
+const gridEl = document.getElementById('grid');
+const overlay = document.getElementById('overlay');
+let holes = [];
+let score, timeLeft, timer, moleTimer, best;
+
+best = Number(sessionStorage.getItem('heino_mole_best') || 0);
+document.getElementById('best').textContent = best;
+
+for(let i=0;i<9;i++){
+  const hole = document.createElement('div');
+  hole.className = 'hole';
+  hole.innerHTML = '<span>🐹</span>';
+  hole.addEventListener('click', () => whack(hole));
+  gridEl.appendChild(hole);
+  holes.push(hole);
+}
+
+function whack(hole){
+  if(!hole.classList.contains('up')) return;
+  hole.classList.remove('up');
+  score++;
+  document.getElementById('score').textContent = score;
+}
+
+function popRandom(){
+  holes.forEach(h => h.classList.remove('up'));
+  const hole = holes[Math.floor(Math.random()*holes.length)];
+  hole.classList.add('up');
+  const duration = Math.max(450, 900 - score*15);
+  moleTimer = setTimeout(popRandom, duration);
+}
+
+function startGame(){
+  overlay.classList.add('hidden');
+  score = 0;
+  timeLeft = 30;
+  document.getElementById('score').textContent = score;
+  document.getElementById('time').textContent = timeLeft;
+  popRandom();
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if(timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function endGame(){
+  clearInterval(timer);
+  clearTimeout(moleTimer);
+  holes.forEach(h => h.classList.remove('up'));
+  if(score > best){
+    best = score;
+    sessionStorage.setItem('heino_mole_best', best);
+    document.getElementById('best').textContent = best;
+  }
+  overlay.classList.remove('hidden');
+  overlay.innerHTML = `
+    <h3 style="font-family:var(--font-display); margin:0; font-size:1.4rem;">Hết giờ! ⏰</h3>
+    <p class="game-hint">Bạn đập được ${score} con chuột.</p>
+    <button class="btn btn-primary" id="startBtn">↻ Chơi lại</button>
+  `;
+  document.getElementById('startBtn').addEventListener('click', startGame);
+}
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+</script>
+</body>
+</html>
